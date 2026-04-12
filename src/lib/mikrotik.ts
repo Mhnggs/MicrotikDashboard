@@ -6,8 +6,13 @@
  *
  * SSL note: If your router uses a self-signed HTTPS cert, set
  * NODE_TLS_REJECT_UNAUTHORIZED=0 in your .env.local file.
+ *
+ * Demo mode: set MIKROTIK_MOCK=true to run without a real router.
  */
 
+import { mock } from './mockData';
+
+const IS_MOCK  = process.env.MIKROTIK_MOCK === 'true';
 const HOST     = process.env.MIKROTIK_HOST     ?? '192.168.88.1';
 const USER     = process.env.MIKROTIK_USER     ?? '';
 const PASS     = process.env.MIKROTIK_PASS     ?? '';
@@ -71,6 +76,7 @@ export interface RouterRoute {
 // ─── Queue management ────────────────────────────────────────────────────────
 
 export async function getQueues(): Promise<RouterQueue[]> {
+  if (IS_MOCK) return mock.getQueues();
   return apiFetch<RouterQueue[]>('/queue/simple');
 }
 
@@ -78,6 +84,7 @@ export async function updateQueueSpeed(
   queueId: string,
   maxLimit: string
 ): Promise<void> {
+  if (IS_MOCK) { mock.updateQueue(queueId, maxLimit); return; }
   await apiFetch(`/queue/simple/${encodeURIComponent(queueId)}`, {
     method: 'PATCH',
     body: JSON.stringify({ 'max-limit': maxLimit }),
@@ -87,6 +94,7 @@ export async function updateQueueSpeed(
 // ─── Route / ISP management ──────────────────────────────────────────────────
 
 export async function getDefaultRoutes(): Promise<RouterRoute[]> {
+  if (IS_MOCK) return mock.getRoutes();
   const all = await apiFetch<RouterRoute[]>('/ip/route');
   return all.filter(r => r['dst-address'] === '0.0.0.0/0');
 }
@@ -120,6 +128,8 @@ export async function switchISP(
   targetComment: string,
   allComments: string[]
 ): Promise<void> {
+  if (IS_MOCK) { mock.switchISP(targetComment, allComments); return; }
+
   const routes = await getDefaultRoutes();
 
   for (const comment of allComments) {
