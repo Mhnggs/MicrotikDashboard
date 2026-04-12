@@ -8,29 +8,29 @@
 
 import type { RouterQueue, RouterRoute } from './mikrotik';
 
-const PC_BASE     = process.env.PC_IP_BASE             ?? '192.168.1';
-const NORMAL_LIM  = `${process.env.SPEED_NORMAL_MBPS   ?? 50}M/${process.env.SPEED_NORMAL_MBPS   ?? 50}M`;
-const UPDATE_LIM  = `${process.env.SPEED_UPDATE_MBPS   ?? 200}M/${process.env.SPEED_UPDATE_MBPS  ?? 200}M`;
-const THROTTLE_LIM = `${process.env.SPEED_THROTTLE_MBPS ?? 2}M/${process.env.SPEED_THROTTLE_MBPS ?? 2}M`;
+const PC_BASE      = process.env.PC_IP_BASE ?? '192.168.1';
+const SPEED_10_LIM  = '10M/10M';
+const SPEED_50_LIM  = '50M/50M';
+const SPEED_100_LIM = '100M/100M';
 
 const ISP1 = process.env.ISP1_ROUTE_COMMENT ?? 'ISP1';
 const ISP2 = process.env.ISP2_ROUTE_COMMENT ?? 'ISP2';
 const ISP3 = process.env.ISP3_ROUTE_COMMENT ?? 'ISP3';
 
 // PCs without a queue = offline
-const OFFLINE_IDS  = new Set([7, 23]);
-// PCs in Update mode on startup (game downloading)
-const UPDATE_IDS   = new Set([3, 12, 18]);
-// PCs throttled on startup
-const THROTTLE_IDS = new Set([5, 31]);
+const OFFLINE_IDS   = new Set([7, 23]);
+// PCs boosted to 100 MB on startup (downloading a game update)
+const SPEED_100_IDS = new Set([3, 12, 18]);
+// PCs limited to 10 MB on startup
+const SPEED_10_IDS  = new Set([5, 31]);
 
 function buildQueues(): RouterQueue[] {
   const result: RouterQueue[] = [];
   for (let i = 1; i <= 40; i++) {
     if (OFFLINE_IDS.has(i)) continue;
-    let maxLimit = NORMAL_LIM;
-    if (UPDATE_IDS.has(i))   maxLimit = UPDATE_LIM;
-    if (THROTTLE_IDS.has(i)) maxLimit = THROTTLE_LIM;
+    let maxLimit = SPEED_50_LIM;
+    if (SPEED_100_IDS.has(i)) maxLimit = SPEED_100_LIM;
+    if (SPEED_10_IDS.has(i))  maxLimit = SPEED_10_LIM;
     result.push({
       '.id':        `*${i}`,
       name:         `PC-${String(i).padStart(2, '0')}`,

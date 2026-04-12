@@ -87,7 +87,7 @@ export default function DashboardPage() {
 
   async function handleResetAll() {
     const toReset = computers.filter(
-      c => c.online && c.preset !== 'normal' && c.preset !== 'unknown'
+      c => c.online && c.preset !== '50mb' && c.preset !== 'unknown'
     );
     if (toReset.length === 0) return;
 
@@ -98,13 +98,13 @@ export default function DashboardPage() {
           fetch(`/api/computers/${pc.id}/speed`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ preset: 'normal' }),
+            body: JSON.stringify({ preset: '50mb' }),
           })
         )
       );
       setComputers(prev =>
         prev.map(pc =>
-          toReset.find(r => r.id === pc.id) ? { ...pc, preset: 'normal' } : pc
+          toReset.find(r => r.id === pc.id) ? { ...pc, preset: '50mb' } : pc
         )
       );
     } finally {

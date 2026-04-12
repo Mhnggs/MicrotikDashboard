@@ -4,7 +4,7 @@ export interface ComputerStatus {
   ip: string;
   queueId: string | null;
   maxLimit: string;
-  preset: string;   // 'normal' | 'update' | 'throttle' | 'custom' | 'unknown'
+  preset: string;   // '10mb' | '50mb' | '100mb' | 'custom' | 'unknown'
   online: boolean;
 }
 
