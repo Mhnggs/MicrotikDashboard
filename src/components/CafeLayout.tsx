@@ -57,12 +57,26 @@ export default function CafeLayout({
 }: Props) {
   const pcMap        = Object.fromEntries(computers.map(c => [c.id, c]));
   const onlineCount  = computers.filter(c => c.online).length;
+
+  // Total physical seats = sum of all section slots
+  const totalSeats = SECTIONS.reduce((n, s) => n + s.pcIds.length, 0);
+
   const nonDefaultCount = computers.filter(
     c => c.online && c.preset !== '10mb' && c.preset !== 'unknown'
   ).length;
 
-  const sectionComputers = (pcIds: number[]) =>
-    pcIds.map(id => pcMap[id]).filter(Boolean) as ComputerStatus[];
+  // Always show every physical seat — offline seats are shown grayed out
+  const sectionComputers = (pcIds: number[]): ComputerStatus[] =>
+    pcIds.map(id => pcMap[id] ?? {
+      id,
+      name:      `PC-${id}`,
+      hostname:  null,
+      ip:        `192.168.0.${id}`,
+      queueId:   null,
+      maxLimit:  '',
+      preset:    'unknown',
+      online:    false,
+    });
 
   const [secA, secB, secC, secD, secE, secF, secG, secH] =
     SECTIONS.map(s => sectionComputers(s.pcIds));
@@ -77,7 +91,7 @@ export default function CafeLayout({
             Cafe Floor Plan
           </span>
           <span className="px-2 py-0.5 rounded-full bg-gray-800 border border-gray-700 text-xs text-gray-300 tabular-nums">
-            {onlineCount}/{computers.length || 40} online
+            {onlineCount}/{totalSeats} online
           </span>
         </div>
 

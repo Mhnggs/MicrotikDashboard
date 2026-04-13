@@ -60,6 +60,16 @@ export interface RouterQueue {
   comment?: string;
 }
 
+export interface RouterDHCPLease {
+  '.id': string;
+  address?: string;
+  'active-address'?: string;
+  'mac-address'?: string;
+  server: string;
+  status: string;     // 'bound' | 'waiting' | 'expired' | 'offered'
+  'host-name'?: string;
+}
+
 export interface RouterMangle {
   '.id': string;
   chain: string;
@@ -68,6 +78,18 @@ export interface RouterMangle {
   disabled: string;
   'src-address'?: string;
   'new-routing-mark'?: string;
+}
+
+// ─── DHCP leases ─────────────────────────────────────────────────────────────
+
+/**
+ * Returns all DHCP leases from the router.
+ * Caller should filter by server='LAN' and status='bound' to get
+ * only currently-connected gaming PCs.
+ */
+export async function getDHCPLeases(): Promise<RouterDHCPLease[]> {
+  if (IS_MOCK) return mock.getDHCPLeases();
+  return apiFetch<RouterDHCPLease[]>('/ip/dhcp-server/lease');
 }
 
 // ─── Queue management ────────────────────────────────────────────────────────

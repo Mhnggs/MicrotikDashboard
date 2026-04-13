@@ -36,7 +36,7 @@ export default function CafeSection({ id, computers, updatingIds, onSpeedChange 
           'text-xs tabular-nums',
           onlineCount === computers.length ? 'text-green-500' : 'text-gray-500'
         )}>
-          {onlineCount}/{computers.length}
+          {onlineCount}/{computers.length} online
         </span>
       </div>
 

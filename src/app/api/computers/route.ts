@@ -1,26 +1,44 @@
 import { NextResponse } from 'next/server';
-import { COMPUTERS, detectPreset } from '@/lib/config';
-import { getQueues } from '@/lib/mikrotik';
+import { detectPreset } from '@/lib/config';
+import { getDHCPLeases, getQueues } from '@/lib/mikrotik';
+
+// Only consider DHCP leases from this server name (matches your RouterOS config)
+const LAN_SERVER = process.env.DHCP_SERVER_NAME ?? 'LAN';
 
 export async function GET() {
   try {
-    const queues = await getQueues();
+    // Fetch leases and queues in parallel
+    const [leases, queues] = await Promise.all([getDHCPLeases(), getQueues()]);
 
-    const computers = COMPUTERS.map(pc => {
-      const queue = queues.find(q => q.name === pc.queueName);
-      const maxLimit = queue?.['max-limit'] ?? '';
-      const preset = maxLimit ? detectPreset(maxLimit) : 'unknown';
+    // Active = currently connected to the LAN (bound lease on the gaming network)
+    const activeLanLeases = leases.filter(
+      l => l.server === LAN_SERVER && l.status === 'bound'
+    );
 
-      return {
-        id: pc.id,
-        name: pc.name,
-        ip: pc.ip,
-        queueId: queue?.['.id'] ?? null,
-        maxLimit,
-        preset,
-        online: !!queue && queue.disabled !== 'true',
-      };
-    });
+    // Build one entry per active lease
+    const computers = activeLanLeases
+      .map(lease => {
+        const ip     = lease['active-address'] ?? lease.address ?? '';
+        const ipNum  = parseInt(ip.split('.').at(-1) ?? '0', 10);
+        const queueName = `User-${ipNum}`;
+
+        const queue    = queues.find(q => q.name === queueName);
+        const maxLimit = queue?.['max-limit'] ?? '';
+        const preset   = maxLimit ? detectPreset(maxLimit) : 'unknown';
+
+        return {
+          id:        ipNum,
+          name:      `PC-${ipNum}`,             // e.g. "PC-5"
+          hostname:  lease['host-name'] ?? null, // Windows computer name if available
+          ip,
+          queueId:   queue?.['.id'] ?? null,
+          maxLimit,
+          preset,
+          online:    true, // it has a bound DHCP lease → it's online
+        };
+      })
+      .filter(pc => pc.id > 0)
+      .sort((a, b) => a.id - b.id);
 
     return NextResponse.json(computers);
   } catch (err) {

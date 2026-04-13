@@ -7,7 +7,7 @@
  *  - ISPs via mangle: STORM ZONE (active), TRANS ZONE, PTCL ZONE
  */
 
-import type { RouterQueue, RouterMangle } from './mikrotik';
+import type { RouterQueue, RouterMangle, RouterDHCPLease } from './mikrotik';
 
 const SPEED_10  = '10M/10M';
 const SPEED_50  = '50M/50M';
@@ -47,13 +47,34 @@ function buildMangleRules(): RouterMangle[] {
   ];
 }
 
+// Simulate ~30 of 40 PCs online (a few empty seats for realism)
+const ONLINE_IPS = new Set([2,3,4,5,6, 7,8,9,10,11, 12,13,14,15, 17,18,19,20,21, 22,23,24,25,26, 27,28,29,30, 32,33,34,35,36]);
+
+function buildDHCPLeases(): RouterDHCPLease[] {
+  const result: RouterDHCPLease[] = [];
+  for (const ipNum of ONLINE_IPS) {
+    result.push({
+      '.id':            `*d${ipNum}`,
+      address:          `192.168.0.${ipNum}`,
+      'active-address': `192.168.0.${ipNum}`,
+      'mac-address':    `AA:BB:CC:DD:EE:${ipNum.toString(16).padStart(2, '0').toUpperCase()}`,
+      server:           'LAN',
+      status:           'bound',
+      'host-name':      `GAMING-PC-${ipNum}`,
+    });
+  }
+  return result;
+}
+
 // Mutable module-level state — persists across API calls in dev server
 let queues: RouterQueue[]  = buildQueues();
 let mangles: RouterMangle[] = buildMangleRules();
+const leases: RouterDHCPLease[] = buildDHCPLeases();
 
 export const mock = {
   getQueues():  RouterQueue[]  { return queues;  },
   getMangleRules(): RouterMangle[] { return mangles; },
+  getDHCPLeases(): RouterDHCPLease[] { return leases; },
 
   // Also expose getRoutes so any leftover route code doesn't crash
   getRoutes() { return []; },

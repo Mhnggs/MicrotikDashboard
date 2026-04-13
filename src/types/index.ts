@@ -1,6 +1,7 @@
 export interface ComputerStatus {
   id: number;
   name: string;
+  hostname: string | null;
   ip: string;
   queueId: string | null;
   maxLimit: string;
