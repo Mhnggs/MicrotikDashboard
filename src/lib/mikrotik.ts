@@ -1,19 +1,18 @@
 /**
- * MikroTik REST API client
+ * MikroTik REST API client (RouterOS v7+)
  *
- * Requires RouterOS v7+. For v6, enable the REST API under
- * /ip/service or use the legacy API port (8728).
+ * ISP switching uses firewall mangle rules, NOT routes.
+ * Your setup routes LAN traffic by enabling one of:
+ *   "STORM ZONE" / "TRANS ZONE" / "PTCL ZONE" mangle rules.
  *
- * SSL note: If your router uses a self-signed HTTPS cert, set
- * NODE_TLS_REJECT_UNAUTHORIZED=0 in your .env.local file.
- *
- * Demo mode: set MIKROTIK_MOCK=true to run without a real router.
+ * Demo mode: set MIKROTIK_MOCK=true in .env.local to run without a router.
+ * SSL note: for HTTPS with self-signed cert add NODE_TLS_REJECT_UNAUTHORIZED=0
  */
 
 import { mock } from './mockData';
 
 const IS_MOCK  = process.env.MIKROTIK_MOCK === 'true';
-const HOST     = process.env.MIKROTIK_HOST     ?? '192.168.88.1';
+const HOST     = process.env.MIKROTIK_HOST     ?? '192.168.0.1';
 const USER     = process.env.MIKROTIK_USER     ?? '';
 const PASS     = process.env.MIKROTIK_PASS     ?? '';
 const PROTOCOL = process.env.MIKROTIK_PROTOCOL ?? 'http';
@@ -38,7 +37,6 @@ async function apiFetch<T = unknown>(
       Authorization: authHeader(),
       ...(options.headers ?? {}),
     },
-    // short timeout so the dashboard doesn't hang if router is unreachable
     signal: AbortSignal.timeout(8_000),
   });
 
@@ -47,12 +45,11 @@ async function apiFetch<T = unknown>(
     throw new Error(`MikroTik ${res.status}: ${body || res.statusText}`);
   }
 
-  // 204 No Content → return empty object
   if (res.status === 204) return {} as T;
   return res.json() as Promise<T>;
 }
 
-// ─── Types returned by RouterOS ──────────────────────────────────────────────
+// ─── RouterOS types ──────────────────────────────────────────────────────────
 
 export interface RouterQueue {
   '.id': string;
@@ -63,14 +60,14 @@ export interface RouterQueue {
   comment?: string;
 }
 
-export interface RouterRoute {
+export interface RouterMangle {
   '.id': string;
-  'dst-address': string;
-  gateway: string;
-  distance: string;
-  disabled: string;
+  chain: string;
+  action: string;
   comment?: string;
-  active?: string;
+  disabled: string;
+  'src-address'?: string;
+  'new-routing-mark'?: string;
 }
 
 // ─── Queue management ────────────────────────────────────────────────────────
@@ -91,38 +88,32 @@ export async function updateQueueSpeed(
   });
 }
 
-// ─── Route / ISP management ──────────────────────────────────────────────────
+// ─── ISP / mangle management ─────────────────────────────────────────────────
+// Your ISP switching works via firewall mangle rules.
+// Each ISP has a rule that marks LAN traffic with a routing mark.
+// Only one rule is enabled at a time → that ISP is active.
 
-export async function getDefaultRoutes(): Promise<RouterRoute[]> {
-  if (IS_MOCK) return mock.getRoutes();
-  const all = await apiFetch<RouterRoute[]>('/ip/route');
-  return all.filter(r => r['dst-address'] === '0.0.0.0/0');
+export async function getMangleRules(): Promise<RouterMangle[]> {
+  if (IS_MOCK) return mock.getMangleRules();
+  return apiFetch<RouterMangle[]>('/ip/firewall/mangle');
 }
 
 /**
- * Returns the routeComment of the currently active ISP, or null if unknown.
- * "Active" = not disabled AND has the lowest distance among ISP routes.
+ * Returns the mangleComment of the currently active ISP.
+ * Active = the ZONE rule that is NOT disabled.
  */
 export async function getCurrentISPComment(
-  ispComments: string[]
+  mangleComments: string[]
 ): Promise<string | null> {
-  const routes = await getDefaultRoutes();
-  const ispRoutes = routes.filter(
-    r => r.comment && ispComments.includes(r.comment)
+  const rules = await getMangleRules();
+  const active = rules.find(
+    r => r.comment && mangleComments.includes(r.comment) && r.disabled !== 'true'
   );
-
-  const enabled = ispRoutes.filter(r => r.disabled !== 'true');
-  if (enabled.length === 0) return null;
-
-  // Pick the one with the smallest distance
-  enabled.sort((a, b) => Number(a.distance) - Number(b.distance));
-  return enabled[0].comment ?? null;
+  return active?.comment ?? null;
 }
 
 /**
- * Switch active ISP by:
- *  - enabling the target ISP route  (distance → 1)
- *  - disabling all other ISP routes (distance → 5, disabled → true)
+ * Switch ISP by enabling the target ZONE mangle rule and disabling all others.
  */
 export async function switchISP(
   targetComment: string,
@@ -130,22 +121,15 @@ export async function switchISP(
 ): Promise<void> {
   if (IS_MOCK) { mock.switchISP(targetComment, allComments); return; }
 
-  const routes = await getDefaultRoutes();
+  const rules = await getMangleRules();
 
   for (const comment of allComments) {
-    const route = routes.find(r => r.comment === comment);
-    if (!route) continue;
+    const rule = rules.find(r => r.comment === comment);
+    if (!rule) continue;
 
-    if (comment === targetComment) {
-      await apiFetch(`/ip/route/${encodeURIComponent(route['.id'])}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ disabled: 'false', distance: '1' }),
-      });
-    } else {
-      await apiFetch(`/ip/route/${encodeURIComponent(route['.id'])}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ disabled: 'true', distance: '5' }),
-      });
-    }
+    await apiFetch(`/ip/firewall/mangle/${encodeURIComponent(rule['.id'])}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ disabled: comment === targetComment ? 'false' : 'true' }),
+    });
   }
 }

@@ -28,18 +28,20 @@ import type { ComputerStatus } from '@/types';
 // Edit the pcIds arrays to match your actual MikroTik queue names / numbering.
 // ─────────────────────────────────────────────────────────────────────────────
 
+// pcIds = Computer.id = IP last octet (2-41)
+// PC-01 → id 2 (User-2, 192.168.0.2)  …  PC-40 → id 41 (User-41, 192.168.0.41)
 const SECTIONS = [
   // Left zone
-  { id: 'A', pcIds: [1,  2,  3,  4,  5]  },
-  { id: 'B', pcIds: [6,  7,  8,  9,  10] },
+  { id: 'A', pcIds: [2,  3,  4,  5,  6]  },
+  { id: 'B', pcIds: [7,  8,  9,  10, 11] },
   // Right zone — left column
-  { id: 'C', pcIds: [11, 12, 13, 14, 15] },
-  { id: 'D', pcIds: [16, 17, 18, 19, 20] },
+  { id: 'C', pcIds: [12, 13, 14, 15, 16] },
+  { id: 'D', pcIds: [17, 18, 19, 20, 21] },
   // Right zone — right column (taller stack)
-  { id: 'E', pcIds: [21, 22, 23, 24, 25] },
-  { id: 'F', pcIds: [26, 27, 28, 29, 30] },
-  { id: 'G', pcIds: [31, 32, 33, 34, 35] },
-  { id: 'H', pcIds: [36, 37, 38, 39, 40] },
+  { id: 'E', pcIds: [22, 23, 24, 25, 26] },
+  { id: 'F', pcIds: [27, 28, 29, 30, 31] },
+  { id: 'G', pcIds: [32, 33, 34, 35, 36] },
+  { id: 'H', pcIds: [37, 38, 39, 40, 41] },
 ];
 
 interface Props {

@@ -12,8 +12,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const allComments = ISPS.map(i => i.routeComment);
-    await switchISP(targetISP.routeComment, allComments);
+    const allComments = ISPS.map(i => i.mangleComment);
+    await switchISP(targetISP.mangleComment, allComments);
     return NextResponse.json({ ok: true, activeId: targetISP.id, activeName: targetISP.name });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Router error';

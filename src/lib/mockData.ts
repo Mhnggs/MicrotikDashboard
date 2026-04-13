@@ -2,73 +2,70 @@
  * In-memory mock state for demo/development without a real MikroTik router.
  * Enable with MIKROTIK_MOCK=true in .env.local
  *
- * State is mutable so ISP switching and speed changes work in the UI.
- * (Module-level state persists across requests in the Next.js dev server.)
+ * Mirrors your actual config:
+ *  - Queues: User-2 … User-41  (192.168.0.2 – 192.168.0.41)
+ *  - ISPs via mangle: STORM ZONE (active), TRANS ZONE, PTCL ZONE
  */
 
-import type { RouterQueue, RouterRoute } from './mikrotik';
+import type { RouterQueue, RouterMangle } from './mikrotik';
 
-const PC_BASE      = process.env.PC_IP_BASE ?? '192.168.1';
-const SPEED_10_LIM  = '10M/10M';
-const SPEED_50_LIM  = '50M/50M';
-const SPEED_100_LIM = '100M/100M';
+const SPEED_10  = '10M/10M';
+const SPEED_50  = '50M/50M';
+const SPEED_100 = '100M/100M';
 
-const ISP1 = process.env.ISP1_ROUTE_COMMENT ?? 'ISP1';
-const ISP2 = process.env.ISP2_ROUTE_COMMENT ?? 'ISP2';
-const ISP3 = process.env.ISP3_ROUTE_COMMENT ?? 'ISP3';
-
-// PCs without a queue = offline
-const OFFLINE_IDS   = new Set([7, 23]);
-// PCs temporarily boosted (admin gave them more speed)
-const SPEED_100_IDS = new Set([3, 18]);
-const SPEED_50_IDS  = new Set([12, 27]);
-// All other online PCs default to 10 MB
+// Simulate a couple of PCs at non-default speeds for demo variety
+const SPEED_100_IP = new Set([4, 19]);   // User-4, User-19 → 100 Mbps
+const SPEED_50_IP  = new Set([13, 27]);  // User-13, User-27 → 50 Mbps
+// All others default to 10 Mbps
 
 function buildQueues(): RouterQueue[] {
   const result: RouterQueue[] = [];
-  for (let i = 1; i <= 40; i++) {
-    if (OFFLINE_IDS.has(i)) continue;
-    // Default is 10 MB — same as the real cafe default
-    let maxLimit = SPEED_10_LIM;
-    if (SPEED_50_IDS.has(i))  maxLimit = SPEED_50_LIM;
-    if (SPEED_100_IDS.has(i)) maxLimit = SPEED_100_LIM;
+  for (let ipNum = 2; ipNum <= 41; ipNum++) {
+    let maxLimit = SPEED_10;
+    if (SPEED_100_IP.has(ipNum)) maxLimit = SPEED_100;
+    if (SPEED_50_IP.has(ipNum))  maxLimit = SPEED_50;
     result.push({
-      '.id':        `*${i}`,
-      name:         `PC-${String(i).padStart(2, '0')}`,
-      target:       `${PC_BASE}.${i}`,
-      'max-limit':  maxLimit,
-      disabled:     'false',
+      '.id':       `*q${ipNum}`,
+      name:        `User-${ipNum}`,
+      target:      `192.168.0.${ipNum}/32`,
+      'max-limit': maxLimit,
+      disabled:    'false',
     });
   }
   return result;
 }
 
-function buildRoutes(): RouterRoute[] {
+// Mirrors your actual mangle rules for LAN (192.168.0.0/24) ISP routing
+function buildMangleRules(): RouterMangle[] {
   return [
-    { '.id': '*r1', 'dst-address': '0.0.0.0/0', gateway: '203.0.113.1', distance: '1', disabled: 'false',  comment: ISP1 },
-    { '.id': '*r2', 'dst-address': '0.0.0.0/0', gateway: '198.51.100.1', distance: '5', disabled: 'true',  comment: ISP2 },
-    { '.id': '*r3', 'dst-address': '0.0.0.0/0', gateway: '192.0.2.1',    distance: '5', disabled: 'true',  comment: ISP3 },
+    // Other mangle rules (LAN→router, OFFICE rules, etc.) — ignored by dashboard
+    { '.id': '*1', chain: 'prerouting', action: 'accept',        comment: 'Allow LAN to router - DO NOT DELETE', disabled: 'false' },
+    // ISP ZONE rules — these are what the dashboard reads and toggles
+    { '.id': '*8', chain: 'prerouting', action: 'mark-routing',  comment: 'STORM ZONE', disabled: 'false', 'src-address': '192.168.0.0/24', 'new-routing-mark': 'storm-z' },
+    { '.id': '*9', chain: 'prerouting', action: 'mark-routing',  comment: 'TRANS ZONE', disabled: 'true',  'src-address': '192.168.0.0/24', 'new-routing-mark': 'trans-z' },
+    { '.id': '*10', chain: 'prerouting', action: 'mark-routing', comment: 'PTCL ZONE',  disabled: 'true',  'src-address': '192.168.0.0/24', 'new-routing-mark': 'ptcl-z'  },
   ];
 }
 
-// Mutable module-level state — fine for dev/demo
-let queues: RouterQueue[] = buildQueues();
-let routes: RouterRoute[] = buildRoutes();
+// Mutable module-level state — persists across API calls in dev server
+let queues: RouterQueue[]  = buildQueues();
+let mangles: RouterMangle[] = buildMangleRules();
 
 export const mock = {
-  getQueues:  (): RouterQueue[] => queues,
-  getRoutes:  (): RouterRoute[] => routes,
+  getQueues():  RouterQueue[]  { return queues;  },
+  getMangleRules(): RouterMangle[] { return mangles; },
+
+  // Also expose getRoutes so any leftover route code doesn't crash
+  getRoutes() { return []; },
 
   updateQueue(id: string, maxLimit: string) {
     queues = queues.map(q => q['.id'] === id ? { ...q, 'max-limit': maxLimit } : q);
   },
 
   switchISP(targetComment: string, allComments: string[]) {
-    routes = routes.map(r => {
+    mangles = mangles.map(r => {
       if (!r.comment || !allComments.includes(r.comment)) return r;
-      return r.comment === targetComment
-        ? { ...r, disabled: 'false', distance: '1' }
-        : { ...r, disabled: 'true',  distance: '5' };
+      return { ...r, disabled: r.comment === targetComment ? 'false' : 'true' };
     });
   },
 };

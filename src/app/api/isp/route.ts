@@ -4,9 +4,9 @@ import { getCurrentISPComment } from '@/lib/mikrotik';
 
 export async function GET() {
   try {
-    const comments = ISPS.map(i => i.routeComment);
+    const comments = ISPS.map(i => i.mangleComment);
     const activeComment = await getCurrentISPComment(comments);
-    const activeISP = ISPS.find(i => i.routeComment === activeComment) ?? null;
+    const activeISP = ISPS.find(i => i.mangleComment === activeComment) ?? null;
 
     return NextResponse.json({
       activeId: activeISP?.id ?? null,
