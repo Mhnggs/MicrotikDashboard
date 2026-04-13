@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { COMPUTERS, SPEED_PRESETS } from '@/lib/config';
+import { SPEED_PRESETS } from '@/lib/config';
 import { getQueues, updateQueueSpeed } from '@/lib/mikrotik';
 
 export async function PATCH(
@@ -7,9 +7,8 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   const pcId = parseInt(params.id, 10);
-  const pc = COMPUTERS.find(c => c.id === pcId);
-  if (!pc) {
-    return NextResponse.json({ error: 'PC not found' }, { status: 404 });
+  if (!pcId || pcId < 1) {
+    return NextResponse.json({ error: 'Invalid PC id' }, { status: 400 });
   }
 
   const body = await request.json().catch(() => ({}));
@@ -21,11 +20,13 @@ export async function PATCH(
   }
 
   try {
-    const queues = await getQueues();
-    const queue = queues.find(q => q.name === pc.queueName);
+    const queueName = `User-${pcId}`;
+    const queues    = await getQueues();
+    const queue     = queues.find(q => q.name === queueName);
+
     if (!queue) {
       return NextResponse.json(
-        { error: `Queue "${pc.queueName}" not found on router` },
+        { error: `Queue "${queueName}" not found on router` },
         { status: 404 }
       );
     }
