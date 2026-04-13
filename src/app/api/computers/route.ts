@@ -5,15 +5,22 @@ import { getDHCPLeases, getQueues } from '@/lib/mikrotik';
 // Only consider DHCP leases from this server name (matches your RouterOS config)
 const LAN_SERVER = process.env.DHCP_SERVER_NAME ?? 'LAN';
 
+// IPs to hide from the dashboard (office PCs, servers, etc.)
+// Set via EXCLUDED_IPS=192.168.0.10,192.168.0.45 in .env.local
+const EXCLUDED_IPS = new Set(
+  (process.env.EXCLUDED_IPS ?? '').split(',').map(s => s.trim()).filter(Boolean)
+);
+
 export async function GET() {
   try {
     // Fetch leases and queues in parallel
     const [leases, queues] = await Promise.all([getDHCPLeases(), getQueues()]);
 
     // Active = currently connected to the LAN (bound lease on the gaming network)
-    const activeLanLeases = leases.filter(
-      l => l.server === LAN_SERVER && l.status === 'bound'
-    );
+    const activeLanLeases = leases.filter(l => {
+      const ip = l['active-address'] ?? l.address ?? '';
+      return l.server === LAN_SERVER && l.status === 'bound' && !EXCLUDED_IPS.has(ip);
+    });
 
     // Build one entry per active lease
     const computers = activeLanLeases
