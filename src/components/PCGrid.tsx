@@ -22,7 +22,7 @@ export default function PCGrid({
 }: Props) {
   const onlineCount = computers.filter(c => c.online).length;
   const nonNormalCount = computers.filter(
-    c => c.online && c.preset !== '50mb' && c.preset !== 'unknown'
+    c => c.online && c.preset !== '10mb' && c.preset !== 'unknown'
   ).length;
 
   return (
@@ -49,10 +49,10 @@ export default function PCGrid({
               ? 'bg-green-500/10 border-green-500/40 text-green-400 hover:bg-green-500/20'
               : 'bg-gray-800 border-gray-700 text-gray-600 cursor-not-allowed opacity-50'
           )}
-          title="Reset all PCs to 50 MB"
+          title="Reset all PCs to 10 MB (default)"
         >
           <Zap className="w-3.5 h-3.5" />
-          Reset All to 50 MB
+          Reset All to 10 MB
           {nonNormalCount > 0 && (
             <span className="ml-1 px-1.5 py-0.5 rounded bg-green-500/20 text-green-300 tabular-nums">
               {nonNormalCount}
@@ -65,11 +65,11 @@ export default function PCGrid({
       <div className="flex flex-wrap gap-3 mb-4 text-xs text-gray-500">
         <span className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-sm bg-amber-500/50 border border-amber-500" />
-          10 MB — limited
+          10 MB — default
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-sm bg-green-500/50 border border-green-500" />
-          50 MB — standard
+          50 MB — boosted
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-sm bg-cyan-500/50 border border-cyan-500" />

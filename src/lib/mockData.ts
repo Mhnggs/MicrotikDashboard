@@ -19,18 +19,19 @@ const ISP3 = process.env.ISP3_ROUTE_COMMENT ?? 'ISP3';
 
 // PCs without a queue = offline
 const OFFLINE_IDS   = new Set([7, 23]);
-// PCs boosted to 100 MB on startup (downloading a game update)
-const SPEED_100_IDS = new Set([3, 12, 18]);
-// PCs limited to 10 MB on startup
-const SPEED_10_IDS  = new Set([5, 31]);
+// PCs temporarily boosted (admin gave them more speed)
+const SPEED_100_IDS = new Set([3, 18]);
+const SPEED_50_IDS  = new Set([12, 27]);
+// All other online PCs default to 10 MB
 
 function buildQueues(): RouterQueue[] {
   const result: RouterQueue[] = [];
   for (let i = 1; i <= 40; i++) {
     if (OFFLINE_IDS.has(i)) continue;
-    let maxLimit = SPEED_50_LIM;
+    // Default is 10 MB — same as the real cafe default
+    let maxLimit = SPEED_10_LIM;
+    if (SPEED_50_IDS.has(i))  maxLimit = SPEED_50_LIM;
     if (SPEED_100_IDS.has(i)) maxLimit = SPEED_100_LIM;
-    if (SPEED_10_IDS.has(i))  maxLimit = SPEED_10_LIM;
     result.push({
       '.id':        `*${i}`,
       name:         `PC-${String(i).padStart(2, '0')}`,
