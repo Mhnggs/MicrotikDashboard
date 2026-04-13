@@ -32,6 +32,7 @@ async function apiFetch<T = unknown>(
   const url = `${baseUrl()}${path}`;
   const res = await fetch(url, {
     ...options,
+    cache: 'no-store', // never cache — always read live state from the router
     headers: {
       'Content-Type': 'application/json',
       Authorization: authHeader(),
