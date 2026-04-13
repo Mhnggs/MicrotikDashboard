@@ -18,6 +18,7 @@ export default function DashboardPage() {
   const [ispError, setIspError]       = useState<string | null>(null);
   const [updatingIds, setUpdatingIds] = useState<Set<number>>(new Set());
   const [resettingAll, setResettingAll] = useState(false);
+  const [officeISP, setOfficeISP]     = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Data fetching ──────────────────────────────────────────────────────────
@@ -44,12 +45,18 @@ export default function DashboardPage() {
     setISPStatus(data);
   }, []);
 
+  const fetchOfficeISP = useCallback(async () => {
+    const res = await fetch('/api/office-isp');
+    const data = await res.json();
+    if (res.ok) setOfficeISP(data.isp ?? null);
+  }, []);
+
   const fetchAll = useCallback(async (showSpinner = false) => {
     if (showSpinner) setRefreshing(true);
-    await Promise.allSettled([fetchComputers(), fetchISP()]);
+    await Promise.allSettled([fetchComputers(), fetchISP(), fetchOfficeISP()]);
     if (showSpinner) setRefreshing(false);
     setLoading(false);
-  }, [fetchComputers, fetchISP]);
+  }, [fetchComputers, fetchISP, fetchOfficeISP]);
 
   // Initial load + polling
   useEffect(() => {
@@ -140,6 +147,7 @@ export default function DashboardPage() {
         totalCount={computers.length}
         onRefresh={() => fetchAll(true)}
         refreshing={refreshing}
+        officeISP={officeISP}
       />
 
       <main className="flex-1 p-4 md:p-6 flex flex-col gap-4 max-w-[1600px] mx-auto w-full">

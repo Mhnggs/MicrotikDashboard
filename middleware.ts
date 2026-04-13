@@ -33,5 +33,6 @@ export const config = {
     '/dashboard/:path*',
     '/api/computers/:path*',
     '/api/isp/:path*',
+    '/api/office-isp/:path*',
   ],
 };

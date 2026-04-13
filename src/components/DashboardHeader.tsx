@@ -10,9 +10,10 @@ interface Props {
   totalCount: number;
   onRefresh: () => void;
   refreshing: boolean;
+  officeISP?: string | null;
 }
 
-export default function DashboardHeader({ onlineCount, totalCount, onRefresh, refreshing }: Props) {
+export default function DashboardHeader({ onlineCount, totalCount, onRefresh, refreshing, officeISP }: Props) {
   const router = useRouter();
   const [time, setTime] = useState('');
 
@@ -57,6 +58,21 @@ export default function DashboardHeader({ onlineCount, totalCount, onRefresh, re
 
       {/* Stats + actions */}
       <div className="flex items-center gap-3">
+        {/* Office ISP badge */}
+        {officeISP && (
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700">
+            <span className="text-xs text-gray-500">Office</span>
+            <span className={clsx(
+              'text-xs font-bold',
+              officeISP === 'STORM'  ? 'text-cyan-400'   :
+              officeISP === 'TRANS'  ? 'text-purple-400'  :
+              officeISP === 'PTCL'   ? 'text-amber-400'   : 'text-gray-300'
+            )}>
+              {officeISP}
+            </span>
+          </div>
+        )}
+
         {/* Online count */}
         <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700">
           <Monitor className="w-4 h-4 text-gray-400" />

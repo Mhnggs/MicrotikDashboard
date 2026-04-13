@@ -40,10 +40,13 @@ function buildMangleRules(): RouterMangle[] {
   return [
     // Other mangle rules (LAN→router, OFFICE rules, etc.) — ignored by dashboard
     { '.id': '*1', chain: 'prerouting', action: 'accept',        comment: 'Allow LAN to router - DO NOT DELETE', disabled: 'false' },
-    // ISP ZONE rules — these are what the dashboard reads and toggles
+    // ISP ZONE rules — gaming LAN (192.168.0.0/24)
     { '.id': '*8', chain: 'prerouting', action: 'mark-routing',  comment: 'STORM ZONE', disabled: 'false', 'src-address': '192.168.0.0/24', 'new-routing-mark': 'storm-z' },
     { '.id': '*9', chain: 'prerouting', action: 'mark-routing',  comment: 'TRANS ZONE', disabled: 'true',  'src-address': '192.168.0.0/24', 'new-routing-mark': 'trans-z' },
     { '.id': '*10', chain: 'prerouting', action: 'mark-routing', comment: 'PTCL ZONE',  disabled: 'true',  'src-address': '192.168.0.0/24', 'new-routing-mark': 'ptcl-z'  },
+    // VLAN20-OFFICE rules (10.252.30.0/24) — both disabled = default ISP (PTCL)
+    { '.id': '*11', chain: 'prerouting', action: 'mark-routing', comment: 'STORM',       disabled: 'true',  'src-address': '10.252.30.0/24',  'new-routing-mark': 'storm'   },
+    { '.id': '*12', chain: 'prerouting', action: 'mark-routing', comment: 'TRANS',       disabled: 'true',  'src-address': '10.252.30.0/24',  'new-routing-mark': 'trans'   },
   ];
 }
 
