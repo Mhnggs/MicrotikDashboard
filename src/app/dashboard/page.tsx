@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { AlertTriangle, WifiOff } from 'lucide-react';
 import DashboardHeader from '@/components/DashboardHeader';
 import ISPSwitcher from '@/components/ISPSwitcher';
-import PCGrid from '@/components/PCGrid';
+import CafeLayout from '@/components/CafeLayout';
 import type { ComputerStatus, ISPStatusResponse } from '@/types';
 
 const POLL_INTERVAL_MS = 15_000;
@@ -163,21 +163,38 @@ export default function DashboardPage() {
           />
         )}
 
-        {/* PC Grid skeleton while loading */}
+        {/* Floor plan skeleton while loading */}
         {loading ? (
           <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-5">
               <div className="w-4 h-4 rounded bg-gray-700 animate-pulse" />
-              <div className="w-28 h-3 rounded bg-gray-700 animate-pulse" />
+              <div className="w-32 h-3 rounded bg-gray-700 animate-pulse" />
             </div>
-            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2">
-              {Array.from({ length: 40 }).map((_, i) => (
-                <div key={i} className="h-24 rounded-xl bg-gray-800/60 animate-pulse" />
-              ))}
+            <div className="flex gap-6">
+              {/* Left zone skeleton */}
+              <div className="flex gap-3">
+                {[0, 1].map(i => (
+                  <div key={i} className="w-[230px] h-[220px] rounded-xl bg-gray-800/60 animate-pulse" />
+                ))}
+              </div>
+              <div className="w-px bg-gray-800" />
+              {/* Right zone skeleton */}
+              <div className="flex gap-3">
+                <div className="flex flex-col gap-3">
+                  {[0, 1].map(i => (
+                    <div key={i} className="w-[230px] h-[100px] rounded-xl bg-gray-800/60 animate-pulse" />
+                  ))}
+                </div>
+                <div className="flex flex-col gap-3">
+                  {[0, 1, 2, 3].map(i => (
+                    <div key={i} className="w-[230px] h-[100px] rounded-xl bg-gray-800/60 animate-pulse" />
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         ) : (
-          <PCGrid
+          <CafeLayout
             computers={computers}
             updatingIds={updatingIds}
             onSpeedChange={handleSpeedChange}
