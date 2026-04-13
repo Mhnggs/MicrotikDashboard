@@ -4,6 +4,7 @@ export interface ComputerStatus {
   hostname: string | null;
   ip: string;
   queueId: string | null;
+  queueName: string | null;
   maxLimit: string;
   preset: string;   // '10mb' | '50mb' | '100mb' | 'custom' | 'unknown'
   online: boolean;

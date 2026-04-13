@@ -32,6 +32,7 @@ export async function GET() {
           hostname:  lease['host-name'] ?? null, // Windows computer name if available
           ip,
           queueId:   queue?.['.id'] ?? null,
+          queueName: queue?.name ?? null,        // e.g. "User-5"
           maxLimit,
           preset,
           online:    true, // it has a bound DHCP lease → it's online

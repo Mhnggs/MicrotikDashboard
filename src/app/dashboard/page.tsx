@@ -137,7 +137,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-950 flex flex-col">
       <DashboardHeader
         onlineCount={onlineCount}
-        totalCount={computers.length || 40}
+        totalCount={computers.length}
         onRefresh={() => fetchAll(true)}
         refreshing={refreshing}
       />
@@ -163,34 +163,26 @@ export default function DashboardPage() {
           />
         )}
 
-        {/* Floor plan skeleton while loading */}
+        {/* Table skeleton while loading */}
         {loading ? (
-          <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
-            <div className="flex items-center gap-2 mb-5">
+          <div className="rounded-xl border border-gray-800 bg-gray-900 overflow-hidden">
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-800">
               <div className="w-4 h-4 rounded bg-gray-700 animate-pulse" />
-              <div className="w-32 h-3 rounded bg-gray-700 animate-pulse" />
+              <div className="w-36 h-3 rounded bg-gray-700 animate-pulse" />
             </div>
-            <div className="flex gap-6">
-              {/* Left zone skeleton */}
-              <div className="flex gap-3">
-                {[0, 1].map(i => (
-                  <div key={i} className="w-[230px] h-[220px] rounded-xl bg-gray-800/60 animate-pulse" />
-                ))}
-              </div>
-              <div className="w-px bg-gray-800" />
-              {/* Right zone skeleton */}
-              <div className="flex gap-3">
-                <div className="flex flex-col gap-3">
-                  {[0, 1].map(i => (
-                    <div key={i} className="w-[230px] h-[100px] rounded-xl bg-gray-800/60 animate-pulse" />
-                  ))}
+            <div className="divide-y divide-gray-800/60">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-4 py-3">
+                  <div className="w-2 h-2 rounded-full bg-gray-700 animate-pulse" />
+                  <div className="w-12 h-3 rounded bg-gray-700 animate-pulse" />
+                  <div className="w-28 h-3 rounded bg-gray-700 animate-pulse" />
+                  <div className="w-20 h-3 rounded bg-gray-700 animate-pulse" />
+                  <div className="w-16 h-3 rounded bg-gray-700 animate-pulse" />
+                  <div className="ml-auto flex gap-1.5">
+                    {[0,1,2].map(j => <div key={j} className="w-8 h-6 rounded bg-gray-700 animate-pulse" />)}
+                  </div>
                 </div>
-                <div className="flex flex-col gap-3">
-                  {[0, 1, 2, 3].map(i => (
-                    <div key={i} className="w-[230px] h-[100px] rounded-xl bg-gray-800/60 animate-pulse" />
-                  ))}
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         ) : (
@@ -201,18 +193,6 @@ export default function DashboardPage() {
             onResetAll={handleResetAll}
             resettingAll={resettingAll}
           />
-        )}
-
-        {/* ISP skeleton while loading */}
-        {loading && (
-          <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
-            <div className="w-40 h-3 rounded bg-gray-700 animate-pulse mb-4" />
-            <div className="grid grid-cols-3 gap-3">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-24 rounded-xl bg-gray-800/60 animate-pulse" />
-              ))}
-            </div>
-          </div>
         )}
 
         {/* Footer */}

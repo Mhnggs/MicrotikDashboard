@@ -2,47 +2,8 @@
 
 import clsx from 'clsx';
 import { Zap, Monitor } from 'lucide-react';
-import CafeSection from './CafeSection';
+import PCRow from './PCRow';
 import type { ComputerStatus } from '@/types';
-
-// ─── Physical cafe layout ─────────────────────────────────────────────────────
-//
-//  Based on the cafe floor plan:
-//
-//  LEFT ZONE          │  RIGHT ZONE
-//                     │
-//  ┌──────┐ ┌──────┐  │  ┌──────┐ ┌──────┐
-//  │  A   │ │  B   │  │  │  C   │ │  E   │
-//  │ 5 PCs│ │ 5 PCs│  │  │ 5 PCs│ │ 5 PCs│
-//  └──────┘ └──────┘  │  ├──────┤ ├──────┤
-//                     │  │  D   │ │  F   │
-//                     │  │ 5 PCs│ │ 5 PCs│
-//                     │  └──────┘ ├──────┤
-//                     │          │  G   │
-//                     │          │ 5 PCs│
-//                     │          ├──────┤
-//                     │          │  H   │
-//                     │          │ 5 PCs│
-//                     │          └──────┘
-//
-// Edit the pcIds arrays to match your actual MikroTik queue names / numbering.
-// ─────────────────────────────────────────────────────────────────────────────
-
-// pcIds = Computer.id = IP last octet (2-41)
-// PC-01 → id 2 (User-2, 192.168.0.2)  …  PC-40 → id 41 (User-41, 192.168.0.41)
-const SECTIONS = [
-  // Left zone
-  { id: 'A', pcIds: [2,  3,  4,  5,  6]  },
-  { id: 'B', pcIds: [7,  8,  9,  10, 11] },
-  // Right zone — left column
-  { id: 'C', pcIds: [12, 13, 14, 15, 16] },
-  { id: 'D', pcIds: [17, 18, 19, 20, 21] },
-  // Right zone — right column (taller stack)
-  { id: 'E', pcIds: [22, 23, 24, 25, 26] },
-  { id: 'F', pcIds: [27, 28, 29, 30, 31] },
-  { id: 'G', pcIds: [32, 33, 34, 35, 36] },
-  { id: 'H', pcIds: [37, 38, 39, 40, 41] },
-];
 
 interface Props {
   computers: ComputerStatus[];
@@ -55,43 +16,23 @@ interface Props {
 export default function CafeLayout({
   computers, updatingIds, onSpeedChange, onResetAll, resettingAll,
 }: Props) {
-  const pcMap        = Object.fromEntries(computers.map(c => [c.id, c]));
-  const onlineCount  = computers.filter(c => c.online).length;
-
-  // Total physical seats = sum of all section slots
-  const totalSeats = SECTIONS.reduce((n, s) => n + s.pcIds.length, 0);
-
+  const onlineCount    = computers.filter(c => c.online).length;
   const nonDefaultCount = computers.filter(
     c => c.online && c.preset !== '10mb' && c.preset !== 'unknown'
   ).length;
 
-  // Always show every physical seat — offline seats are shown grayed out
-  const sectionComputers = (pcIds: number[]): ComputerStatus[] =>
-    pcIds.map(id => pcMap[id] ?? {
-      id,
-      name:      `PC-${id}`,
-      hostname:  null,
-      ip:        `192.168.0.${id}`,
-      queueId:   null,
-      maxLimit:  '',
-      preset:    'unknown',
-      online:    false,
-    });
-
-  const [secA, secB, secC, secD, secE, secF, secG, secH] =
-    SECTIONS.map(s => sectionComputers(s.pcIds));
-
   return (
-    <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
+    <div className="rounded-xl border border-gray-800 bg-gray-900 overflow-hidden">
+
       {/* ── Header ── */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
         <div className="flex items-center gap-3">
           <Monitor className="w-4 h-4 text-gray-400" />
           <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-            Cafe Floor Plan
+            Online Computers
           </span>
           <span className="px-2 py-0.5 rounded-full bg-gray-800 border border-gray-700 text-xs text-gray-300 tabular-nums">
-            {onlineCount}/{totalSeats} online
+            {onlineCount} online
           </span>
         </div>
 
@@ -116,72 +57,38 @@ export default function CafeLayout({
         </button>
       </div>
 
-      {/* ── Speed legend ── */}
-      <div className="flex flex-wrap gap-4 mb-5 text-xs text-gray-500">
-        <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-sm bg-amber-500/50 border border-amber-500" />
-          10 — default
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-sm bg-green-500/50 border border-green-500" />
-          50 — boosted
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-sm bg-cyan-500/50 border border-cyan-500" />
-          100 — full speed
-        </span>
-        <span className="text-gray-600 ml-2">Buttons show Mbps</span>
-      </div>
-
-      {/* ── Floor plan ── */}
-      <div className="overflow-x-auto pb-2">
-        <div className="flex gap-6 min-w-fit">
-
-          {/* ── LEFT ZONE ── */}
-          <div className="flex flex-col gap-1">
-            <p className="text-[10px] text-gray-600 uppercase tracking-widest font-semibold mb-1 text-center">
-              Left Side
-            </p>
-            <div className="flex gap-3">
-              <CafeSection id="A" computers={secA} updatingIds={updatingIds} onSpeedChange={onSpeedChange} />
-              <CafeSection id="B" computers={secB} updatingIds={updatingIds} onSpeedChange={onSpeedChange} />
-            </div>
-          </div>
-
-          {/* ── Walkway divider ── */}
-          <div className="flex flex-col items-center justify-center gap-2 px-1 select-none">
-            <div className="h-full w-px border-l border-dashed border-gray-700" />
-            <span className="text-[10px] text-gray-700 uppercase tracking-widest rotate-90 whitespace-nowrap">
-              walkway
-            </span>
-            <div className="h-full w-px border-l border-dashed border-gray-700" />
-          </div>
-
-          {/* ── RIGHT ZONE ── */}
-          <div className="flex flex-col gap-1">
-            <p className="text-[10px] text-gray-600 uppercase tracking-widest font-semibold mb-1 text-center">
-              Right Side
-            </p>
-            <div className="flex gap-3 items-start">
-
-              {/* Right-left column: C, D */}
-              <div className="flex flex-col gap-3">
-                <CafeSection id="C" computers={secC} updatingIds={updatingIds} onSpeedChange={onSpeedChange} />
-                <CafeSection id="D" computers={secD} updatingIds={updatingIds} onSpeedChange={onSpeedChange} />
-              </div>
-
-              {/* Right-right column: E, F, G, H */}
-              <div className="flex flex-col gap-3">
-                <CafeSection id="E" computers={secE} updatingIds={updatingIds} onSpeedChange={onSpeedChange} />
-                <CafeSection id="F" computers={secF} updatingIds={updatingIds} onSpeedChange={onSpeedChange} />
-                <CafeSection id="G" computers={secG} updatingIds={updatingIds} onSpeedChange={onSpeedChange} />
-                <CafeSection id="H" computers={secH} updatingIds={updatingIds} onSpeedChange={onSpeedChange} />
-              </div>
-
-            </div>
-          </div>
-
-        </div>
+      {/* ── Table ── */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-gray-800 bg-gray-800/40 text-left">
+              <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-8" />
+              <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">PC</th>
+              <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">IP Address</th>
+              <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Queue</th>
+              <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Current Speed</th>
+              <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Change Speed</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-800/60">
+            {computers.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-12 text-center text-sm text-gray-600">
+                  No computers online
+                </td>
+              </tr>
+            ) : (
+              computers.map(pc => (
+                <PCRow
+                  key={pc.id}
+                  computer={pc}
+                  updating={updatingIds.has(pc.id)}
+                  onSpeedChange={onSpeedChange}
+                />
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
