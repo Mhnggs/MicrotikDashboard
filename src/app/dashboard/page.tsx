@@ -144,7 +144,6 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-950 flex flex-col">
       <DashboardHeader
         onlineCount={onlineCount}
-        totalCount={computers.length}
         onRefresh={() => fetchAll(true)}
         refreshing={refreshing}
         officeISP={officeISP}

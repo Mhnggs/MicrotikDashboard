@@ -7,13 +7,12 @@ import clsx from 'clsx';
 
 interface Props {
   onlineCount: number;
-  totalCount: number;
   onRefresh: () => void;
   refreshing: boolean;
   officeISP?: string | null;
 }
 
-export default function DashboardHeader({ onlineCount, totalCount, onRefresh, refreshing, officeISP }: Props) {
+export default function DashboardHeader({ onlineCount, onRefresh, refreshing, officeISP }: Props) {
   const router = useRouter();
   const [time, setTime] = useState('');
 
@@ -76,13 +75,10 @@ export default function DashboardHeader({ onlineCount, totalCount, onRefresh, re
         {/* Online count */}
         <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700">
           <Monitor className="w-4 h-4 text-gray-400" />
-          <span className="text-sm tabular-nums">
-            <span className={clsx('font-semibold', onlineCount === totalCount ? 'text-green-400' : 'text-amber-400')}>
-              {onlineCount}
-            </span>
-            <span className="text-gray-500">/{totalCount}</span>
+          <span className="text-sm font-semibold tabular-nums text-green-400">
+            {onlineCount}
           </span>
-          <span className="text-xs text-gray-500 hidden lg:inline">online</span>
+          <span className="text-xs text-gray-500">online</span>
         </div>
 
         {/* Refresh */}
